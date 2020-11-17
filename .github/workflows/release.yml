@@ -1,0 +1,83 @@
+name: Release package
+
+on:
+    push:
+        tags:
+            - "*.*.*"
+
+jobs:
+    release:
+        name: Create Release
+        runs-on: ubuntu-latest
+        outputs:
+            upload_url: ${{ steps.create_release.outputs.upload_url }}
+        steps:
+            - name: Checkout sources
+              uses: actions/checkout@v2
+
+            - name: Get version from tag
+              id: tag_name
+              run: |
+                  echo ::set-output name=current_version::${GITHUB_REF#refs/tags/}
+              shell: bash
+
+            - name: Get Changelog Entry
+              id: changelog_reader
+              uses: mindsers/changelog-reader-action@v2
+              with:
+                  version: ${{ steps.tag_name.outputs.current_version }}
+                  path: ./CHANGELOG.md
+
+            - name: Create Release
+              id: create_release
+              uses: actions/create-release@v1
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  tag_name: ${{ steps.changelog_reader.outputs.version }}
+                  release_name: Release ${{ steps.changelog_reader.outputs.version }}
+                  body: ${{ steps.changelog_reader.outputs.changes }}
+                  prerelease: ${{ steps.changelog_reader.outputs.status == 'prereleased' }}
+                  draft: ${{ steps.changelog_reader.outputs.status == 'unreleased' }}
+
+    install:
+        name: Install
+        needs: [release]
+        runs-on: ${{ matrix.os }}
+        strategy:
+            matrix:
+                include:
+                    - os: ubuntu-latest
+                      artifact_name: forked
+                      asset_name: forked-linux-amd64
+                    - os: windows-latest
+                      artifact_name: forked.exe
+                      asset_name: forked-windows-amd64.exe
+                    - os: macos-latest
+                      artifact_name: forked
+                      asset_name: forked-macos-amd64
+        steps:
+            - name: Checkout sources
+              uses: actions/checkout@v2
+
+            - name: Install stable toolchain
+              uses: actions-rs/toolchain@v1
+              with:
+                  toolchain: stable
+                  override: true
+
+            - name: Install
+              uses: actions-rs/cargo@v1
+              with:
+                  command: install
+                  args: --root out --path . --bins
+
+            - name: Upload
+              uses: actions/upload-release-asset@v1
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  upload_url: ${{ needs.release.outputs.upload_url }}
+                  asset_path: ./out/bin/${{ matrix.artifact_name }}
+                  asset_name: ${{ matrix.asset_name }}
+                  asset_content_type: application/octet-stream
