@@ -1,9 +1,9 @@
 # forked
 
-![Release package](https://img.shields.io/github/workflow/status/jensmetzner/forked/CI?style=flat-square)
-![GitHub repo size](https://img.shields.io/github/repo-size/jensmetzner/forked?style=flat-square)
+![Release package](https://img.shields.io/github/workflow/status/jensmetzner/forked/CI)
+![GitHub repo size](https://img.shields.io/github/repo-size/jensmetzner/forked)
 [![GitHub license](https://img.shields.io/github/license/jensmetzner/forked.svg)](https://github.com/jensmetzner/forked/blob/master/LICENSE)
-[![GitHub forks](https://img.shields.io/github/downloads/jensmetzner/forked/total?style=flat-square)](https://github.com/JensMetzner/forked/releases/latest)
+[![GitHub forks](https://img.shields.io/github/downloads/jensmetzner/forked/total)](https://github.com/JensMetzner/forked/releases/latest)
 
 `forked` is an tool for managing online exercises that use gitlab.
 
