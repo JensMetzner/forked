@@ -1,10 +1,10 @@
-name: Validate code
+name: CI
 
 on: [push, pull_request]
 
 jobs:
-    check:
-        name: Check
+    build:
+        name: Build
         runs-on: ubuntu-latest
         steps:
             - name: Checkout sources
@@ -16,10 +16,24 @@ jobs:
                   toolchain: stable
                   override: true
 
+            - name: Cache cargo
+              uses: actions/cache@v2
+              with:
+                  path: |
+                      ~/.cargo/registry
+                      ~/.cargo/git
+                      target
+                  key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
             - name: Run cargo check
               uses: actions-rs/cargo@v1
               with:
                   command: check
+
+            - name: Run cargo build
+              uses: actions-rs/cargo@v1
+              with:
+                  command: build
 
     test:
         name: Test
@@ -33,6 +47,15 @@ jobs:
               with:
                   toolchain: stable
                   override: true
+
+            - name: Cache cargo
+              uses: actions/cache@v2
+              with:
+                  path: |
+                      ~/.cargo/registry
+                      ~/.cargo/git
+                      target
+                  key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
 
             - name: Run cargo test
               uses: actions-rs/cargo@v1
