@@ -1,5 +1,6 @@
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use std::fmt::Display;
 
 /// ``` json
 /// {
@@ -146,14 +147,18 @@ impl IntoIterator for Forks {
 }
 
 impl Forks {
-    pub async fn get(client: &Client, project_id: usize) -> anyhow::Result<Forks> {
+    pub async fn get<G: AsRef<str> + Display>(
+        client: &Client,
+        gitlab_api_url: G,
+        project_id: usize,
+    ) -> anyhow::Result<Forks> {
         let mut list = Vec::new();
 
         for page_id in 1..10 as usize {
             let res = client
                 .get(&format!(
-                    "https://gitlab.inf.uni-konstanz.de/api/v4/projects/{}/forks",
-                    &project_id
+                    "{}/v4/projects/{}/forks",
+                    &gitlab_api_url, &project_id
                 ))
                 .query(&[
                     ("order_by", "created_at"),

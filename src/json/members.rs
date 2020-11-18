@@ -1,5 +1,6 @@
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use std::fmt::Display;
 
 /// ``` json
 /// [
@@ -39,11 +40,15 @@ pub struct Member {
 }
 
 impl Member {
-    pub async fn get(client: &Client, project_id: usize) -> anyhow::Result<Vec<Member>> {
+    pub async fn get<G: AsRef<str> + Display>(
+        client: &Client,
+        gitlab_api_url: G,
+        project_id: usize,
+    ) -> anyhow::Result<Vec<Member>> {
         let res = client
             .get(&format!(
-                "https://gitlab.inf.uni-konstanz.de/api/v4/projects/{}/members",
-                project_id
+                "{}/v4/projects/{}/members",
+                gitlab_api_url, project_id
             ))
             .send()
             .await?;

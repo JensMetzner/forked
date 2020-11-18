@@ -26,15 +26,19 @@ const DELAY: time::Duration = time::Duration::from_secs(10);
     about = env!("CARGO_PKG_DESCRIPTION"),
 )]
 pub struct Opts {
-    /// Id of the repository
-    #[clap(short, env = "GITLAB_TOKEN", setting = ArgSettings::HideEnvValues)]
+    /// Personal access token. (Not necessary if the environment variable `GITLAB_TOKEN` is set)
+    #[clap(short='g', long, env = "GITLAB_TOKEN", setting = ArgSettings::HideEnvValues)]
     gitlab_token: String,
+    /// Gitlab api url. (Not necessary if the environment variable `GITLAB_API` is set)
+    #[clap(short='a', long, env = "GITLAB_API", setting = ArgSettings::HideEnvValues)]
+    gitlab_api_url: String,
     #[clap(subcommand)]
     pub subcmd: SubCommand,
 }
 
 #[derive(Clap, Debug)]
 pub enum SubCommand {
+    /// Initialize a course, adding all forked repositories to `forked.yml`
     Init {
         /// Id of the root repository
         project_id: usize,
@@ -42,21 +46,25 @@ pub enum SubCommand {
         #[clap(long)]
         exclude_members: Vec<String>,
         /// Path to projects directory
-        #[clap(long)]
-        projects_directory: Option<PathBuf>,
+        #[clap(long, default_value = "projects")]
+        projects_directory: PathBuf,
         /// Path to templates directory
-        #[clap(long)]
-        templates_directory: Option<PathBuf>,
+        #[clap(long, default_value = "templates")]
+        templates_directory: PathBuf,
         /// Path to feedbacks directory
-        #[clap(long)]
-        feedbacks_directory: Option<PathBuf>,
+        #[clap(long, default_value = "feedbacks")]
+        feedbacks_directory: PathBuf,
     },
+    /// Runs `git clone <repository>` for all groups
     Clone,
+    /// Runs `git pull` for all groups
     Pull,
+    /// Runs `git checkout <branch>` for all groups
     Checkout {
         /// Name of the branch
         branch: String,
     },
+    /// Generate the feedback files for all groups
     Feedback {
         /// Name of the feedback template
         name: String,
@@ -106,22 +114,23 @@ async fn run(opts: Opts) -> Result<(), anyhow::Error> {
             templates_directory,
             feedbacks_directory,
         } => {
-            let forks = json::Forks::get(&client, project_id).await?;
+            let forks = json::Forks::get(&client, &opts.gitlab_api_url, project_id).await?;
 
             let mut projects = HashMap::new();
 
             for fork in forks {
                 thread::sleep(DELAY);
 
-                let members: Vec<Member> = json::Member::get(&client, fork.id)
-                    .await?
-                    .into_iter()
-                    .map(|member| Member {
-                        username: member.username,
-                        name: member.name,
-                    })
-                    .filter(|member| !exclude_members.contains(&member.username))
-                    .collect();
+                let members: Vec<Member> =
+                    json::Member::get(&client, &opts.gitlab_api_url, fork.id)
+                        .await?
+                        .into_iter()
+                        .map(|member| Member {
+                            username: member.username,
+                            name: member.name,
+                        })
+                        .filter(|member| !exclude_members.contains(&member.username))
+                        .collect();
 
                 if members.is_empty() {
                     continue;
@@ -139,9 +148,9 @@ async fn run(opts: Opts) -> Result<(), anyhow::Error> {
 
             Manifest {
                 projects,
-                projects_directory: projects_directory.unwrap_or_else(|| "projects".into()),
-                templates_directory: templates_directory.unwrap_or_else(|| "templates".into()),
-                feedbacks_directory: feedbacks_directory.unwrap_or_else(|| "feedbacks".into()),
+                projects_directory,
+                templates_directory,
+                feedbacks_directory,
             }
             .save()
         }
