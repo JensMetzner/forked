@@ -267,7 +267,7 @@ async fn run(opts: Opts) -> Result<(), anyhow::Error> {
 
                         let title = lines
                             .next()
-                            .unwrap_or_else(|| "Feedback".into())
+                            .unwrap_or_else(|| "Feedback")
                             .trim_matches('#')
                             .trim()
                             .to_string();

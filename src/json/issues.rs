@@ -10,7 +10,7 @@ pub struct NewIssueRequest {
     pub labels: Vec<String>,
 }
 
-fn labels_serialize<S>(labels: &Vec<String>, s: S) -> Result<S::Ok, S::Error>
+fn labels_serialize<S>(labels: &[String], s: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
