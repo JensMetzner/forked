@@ -1,6 +1,6 @@
 [package]
 name = "forked"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Jens Metzner <jens.metzner@uni-konstanz.de>"]
 edition = "2018"
 description = "`forked` is an online tool for managing exercises that use gitlab."
