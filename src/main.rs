@@ -37,11 +37,17 @@ pub struct Opts {
 }
 
 #[derive(Clap, Debug)]
+pub enum FeedbackAction {
+    Create,
+    Publish,
+}
+
+#[derive(Clap, Debug)]
 pub enum SubCommand {
     /// Initialize a course, adding all forked repositories to `forked.yml`
     Init {
         /// Id of the root repository
-        project_id: usize,
+        project_id: u32,
         /// Exclude members of forked projects (with username)
         #[clap(long)]
         exclude_members: Vec<String>,
@@ -64,8 +70,11 @@ pub enum SubCommand {
         /// Name of the branch
         branch: String,
     },
-    /// Generate the feedback files for all groups
+    /// Either create or publish all feedback files for all groups
     Feedback {
+        /// Choose the action
+        #[clap(arg_enum)]
+        action: FeedbackAction,
         /// Name of the feedback template
         name: String,
     },
@@ -116,11 +125,11 @@ async fn run(opts: Opts) -> Result<(), anyhow::Error> {
         } => {
             let forks = json::Forks::get(&client, &opts.gitlab_api_url, project_id).await?;
 
+            thread::sleep(DELAY);
+
             let mut projects = HashMap::new();
 
             for fork in forks {
-                thread::sleep(DELAY);
-
                 let members: Vec<Member> =
                     json::Member::get(&client, &opts.gitlab_api_url, fork.id)
                         .await?
@@ -144,6 +153,8 @@ async fn run(opts: Opts) -> Result<(), anyhow::Error> {
                         repository: fork.ssh_url_to_repo,
                     },
                 );
+
+                thread::sleep(DELAY);
             }
 
             Manifest {
@@ -217,24 +228,68 @@ async fn run(opts: Opts) -> Result<(), anyhow::Error> {
 
             Ok(())
         }
-        SubCommand::Feedback { name } => {
+        SubCommand::Feedback { name, action } => {
             let config = Manifest::load()?;
 
-            let mut tt = TinyTemplate::new();
-            let raw = fs::read_to_string(config.templates_directory.join(format!("{}.md", name)))?;
-            tt.add_template("Feedback", raw.as_str())?;
+            match action {
+                FeedbackAction::Create => {
+                    let mut tt = TinyTemplate::new();
+                    let raw = fs::read_to_string(
+                        config.templates_directory.join(format!("{}.md", name)),
+                    )?;
+                    tt.add_template("Feedback", raw.as_str())?;
 
-            fs::create_dir_all(&config.feedbacks_directory.join(&name))?;
+                    fs::create_dir_all(&config.feedbacks_directory.join(&name))?;
 
-            for (key, project) in config.projects {
-                let rendered = tt.render("Feedback", &project)?;
-                fs::write(
-                    config
-                        .feedbacks_directory
-                        .join(&name)
-                        .join(format!("{}.md", key)),
-                    rendered,
-                )?;
+                    for (key, project) in config.projects {
+                        let rendered = tt.render("Feedback", &project)?;
+                        fs::write(
+                            config
+                                .feedbacks_directory
+                                .join(&name)
+                                .join(format!("{}.md", key)),
+                            rendered,
+                        )?;
+                    }
+                }
+                FeedbackAction::Publish => {
+                    for (key, project) in config.projects {
+                        print!("publishing issue for {} ... ", &key);
+
+                        let feedback_path = config
+                            .feedbacks_directory
+                            .join(&name)
+                            .join(format!("{}.md", key));
+
+                        let data = fs::read_to_string(feedback_path)?;
+
+                        let mut lines = data.lines();
+
+                        let title = lines
+                            .next()
+                            .unwrap_or_else(|| "Feedback".into())
+                            .trim_matches('#')
+                            .trim()
+                            .to_string();
+
+                        let request = json::NewIssueRequest {
+                            title,
+                            description: lines.collect::<Vec<_>>().join("\n"),
+                            labels: vec!["feedback".into()],
+                        };
+
+                        if request
+                            .post(&client, &opts.gitlab_api_url, project.id)
+                            .await?
+                            .is_opened()
+                        {
+                            println!("\u{2713}");
+                        } else {
+                            println!("\u{2717}");
+                        }
+                        thread::sleep(DELAY);
+                    }
+                }
             }
             Ok(())
         }

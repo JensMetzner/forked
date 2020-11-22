@@ -68,7 +68,7 @@ use std::fmt::Display;
 /// ```
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Fork {
-    pub id: usize,
+    pub id: u32,
     pub description: Option<String>,
     pub default_branch: String,
     pub visibility: String,
@@ -127,7 +127,7 @@ pub struct Links {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Namespace {
-    pub id: usize,
+    pub id: u32,
     pub name: String,
     pub path: String,
     pub kind: String,
@@ -150,7 +150,7 @@ impl Forks {
     pub async fn get<G: AsRef<str> + Display>(
         client: &Client,
         gitlab_api_url: G,
-        project_id: usize,
+        project_id: u32,
     ) -> anyhow::Result<Forks> {
         let mut list = Vec::new();
 

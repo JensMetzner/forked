@@ -43,7 +43,7 @@ impl Member {
     pub async fn get<G: AsRef<str> + Display>(
         client: &Client,
         gitlab_api_url: G,
-        project_id: usize,
+        project_id: u32,
     ) -> anyhow::Result<Vec<Member>> {
         let res = client
             .get(&format!(
