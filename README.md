@@ -13,9 +13,9 @@ You can install forked with `cargo install forked` or download it from the [rele
 
 
 ```
-forked 0.1.1
+forked 0.1.2
 Jens Metzner <jens.metzner@uni-konstanz.de>
-`forked` is an tool for managing online exercises that use gitlab.
+`forked` is an online tool for managing exercises that use gitlab.
 
 USAGE:
     forked.exe --gitlab-token <gitlab-token> --gitlab-api-url <gitlab-api-url> <SUBCOMMAND>
@@ -37,7 +37,7 @@ OPTIONS:
 SUBCOMMANDS:
     checkout    Runs `git checkout <branch>` for all groups
     clone       Runs `git clone <repository>` for all groups
-    feedback    Generate the feedback files for all groups
+    feedback    Either create or publish all feedback files for all groups
     help        Prints this message or the help of the given subcommand(s)
     init        Initialize a course, adding all forked repositories to `forked.yml`
     pull        Runs `git pull` for all groups
