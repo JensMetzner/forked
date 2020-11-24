@@ -177,10 +177,12 @@ async fn run(opts: Opts) -> Result<(), anyhow::Error> {
                     .current_dir(&config.projects_directory)
                     .output()?;
 
+                log::debug!("{}", std::str::from_utf8(&output.stdout)?);
                 if output.status.success() {
                     println!("\u{2713}");
                 } else {
-                    println!("\u{2717}");
+                    println!("\u{2715}");
+                    log::error!("{}", std::str::from_utf8(&output.stderr)?);
                 }
 
                 thread::sleep(DELAY);
@@ -198,10 +200,12 @@ async fn run(opts: Opts) -> Result<(), anyhow::Error> {
                     .current_dir(config.projects_directory.join(&key))
                     .output()?;
 
+                log::debug!("{}", std::str::from_utf8(&output.stdout)?);
                 if output.status.success() {
                     println!("\u{2713}");
                 } else {
-                    println!("\u{2717}");
+                    println!("\u{2715}");
+                    log::error!("{}", std::str::from_utf8(&output.stderr)?);
                 }
 
                 thread::sleep(DELAY);
@@ -219,10 +223,12 @@ async fn run(opts: Opts) -> Result<(), anyhow::Error> {
                     .current_dir(config.projects_directory.join(&key))
                     .output()?;
 
+                log::debug!("{}", std::str::from_utf8(&output.stdout)?);
                 if output.status.success() {
                     println!("\u{2713}");
                 } else {
-                    println!("\u{2717}");
+                    println!("\u{2715}");
+                    log::error!("{}", std::str::from_utf8(&output.stderr)?);
                 }
             }
 
@@ -285,7 +291,7 @@ async fn run(opts: Opts) -> Result<(), anyhow::Error> {
                         {
                             println!("\u{2713}");
                         } else {
-                            println!("\u{2717}");
+                            println!("\u{2715}");
                         }
                         thread::sleep(DELAY);
                     }
